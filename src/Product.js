@@ -38,7 +38,7 @@ const Product = ({ product, categories, onSubmit }) => {
           type="number"
           name="price"
           placeholder="Product Price"
-          value={formProduct.price || ''}
+          value={formProduct.price}
           onChange={handleChange}
           required
         />
@@ -66,14 +66,7 @@ const Product = ({ product, categories, onSubmit }) => {
         <button type="submit">{isEditMode ? 'Save Changes' : 'Add Product'}</button>
       </form>
 
-      {formProduct && (
-        <div>
-          <p>Name: {formProduct.name}</p>
-          <p>Price: {formProduct.price}</p>
-          <p>Stock: {formProduct.stock}</p>
-          <p>Category: {formProduct.category}</p>
-        </div>
-      )}
+     
     </div>
   );
 };
