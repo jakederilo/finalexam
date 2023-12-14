@@ -15,7 +15,12 @@ import ProductCard from './ProductCard';
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState([
+    { name: 'Bestsellers', id: uuidv4() },
+    { name: 'Family Meals', id: uuidv4() },
+    { name: 'Breakfast', id: uuidv4() },
+    { name: 'Burgers', id: uuidv4() },
+   ]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [updatedCategoryName, setUpdatedCategoryName] = useState('');
@@ -388,6 +393,7 @@ const toggleSortOrderForPurchasers = () => {
                 <button type="submit" className="btn btn-primary mb-5">
                   Add Product
                 </button>
+              
               </form>
             </Modal.Body>
             <Modal.Footer>
@@ -406,36 +412,36 @@ const toggleSortOrderForPurchasers = () => {
             <button type="submit" className="btn btn-primary mb-5">Add Category</button>
           </form>
 
+     
           <div>
-            <h2>Categories</h2>
-            <ul className="list-group mt-3">
-              {categories.map((category) => (
-                <li key={category.id} className="list-group-item d-flex justify-content-between align-items-center">
-                  {editingCategory === category.id ? (
-                    <div className="d-flex align-items-center">
-                      <input
-                        type="text"
-                        value={updatedCategoryName}
-                        onChange={(e) => setUpdatedCategoryName(e.target.value)}
-                        className="form-control me-2"
-                      />
-                      <button onClick={() => updateCategory(category.id)} className="btn btn-success">Save</button>
-                      <button onClick={cancelEditingCategory} className="btn btn-warning">Cancel</button>
-                    </div>
-                  ) : (
-                    <div className='d-flex align-items-center justify-content-between w-100'>
-                      <span>{category.name}</span>
-                      <div className='mx-'>
-                        
-                        <button onClick={() => startEditingCategory(category.id)} className="btn btn-success mx-2">Update</button>
-                        <button onClick={() => deleteCategory(category.id)} className="btn btn-danger">Delete</button>
-                      </div>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
+  <h2>Categories</h2>
+  <ul className="list-group mt-3">
+    {categories.map((category) => (
+      <li key={category.id} className="list-group-item d-flex justify-content-between align-items-center">
+        {editingCategory === category.id ? (
+          <div className="d-flex align-items-center">
+            <input
+              type="text"
+              value={updatedCategoryName}
+              onChange={(e) => setUpdatedCategoryName(e.target.value)}
+              className="form-control me-2"
+            />
+            <button onClick={() => updateCategory(category.id)} className="btn btn-success">Save</button>
+            <button onClick={cancelEditingCategory} className="btn btn-warning">Cancel</button>
           </div>
+        ) : (
+          <div className='d-flex align-items-center justify-content-between w-100'>
+            <span>{category.name}</span>
+            <div className='mx-'>
+              <button onClick={() => startEditingCategory(category.id)} className="btn btn-success mx-2">Update</button>
+              <button onClick={() => deleteCategory(category.id)} className="btn btn-danger">Delete</button>
+            </div>
+          </div>
+        )}
+      </li>
+    ))}
+  </ul>
+</div>
         </TabPanel>
 
         <TabPanel>

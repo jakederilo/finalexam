@@ -41,14 +41,14 @@ const ProductCard = ({ product, onEdit, onDelete, onAddToCart, imageUrl }) => {
           Category: {product.category}
         </Card.Text>
         <div className="btn-group">
-          <button onClick={() => onEdit(product.id)} className="btn btn-primary btn-sm">
-            Edit
+          <button onClick={() => onEdit(product.id)} className="btn btn-primary btn-sm ">
+            Update
           </button>
           <button onClick={() => onDelete(product.id)} className="btn btn-danger btn-sm">
             Delete
           </button>
-          <button onClick={() => onAddToCart(product)} className="btn btn-success btn-sm">
-            Add to Cart
+          <button onClick={() => onAddToCart(product)} className="btn btn-success btn-sm text-danger bg-warning">
+            Order Now
           </button>
         </div>
       </Card.Body>
