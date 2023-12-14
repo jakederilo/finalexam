@@ -33,6 +33,7 @@ const Product = ({ product, categories, onSubmit }) => {
           value={formProduct.name || ''}
           onChange={handleChange}
           required
+          className='form-control mb-3'
         />
         <input
           type="number"
@@ -41,6 +42,7 @@ const Product = ({ product, categories, onSubmit }) => {
           value={formProduct.price}
           onChange={handleChange}
           required
+          className='form-control mb-3'
         />
         <input
           type="number"
@@ -49,21 +51,24 @@ const Product = ({ product, categories, onSubmit }) => {
           value={formProduct.stock || ''}
           onChange={handleChange}
           required
+          className='form-control mb-3'
         />
         <select
           name="category"
           value={formProduct.category || ''}
           onChange={handleChange}
           required
+          className='form-select mb-3'
         >
           <option value="">Select a Category</option>
           {categories.map((category) => (
             <option key={category.id} value={category.name}>
               {category.name}
             </option>
+            
           ))}
         </select>
-        <button type="submit">{isEditMode ? 'Save Changes' : 'Add Product'}</button>
+        <button type="submit" className='btn btn-success'>{isEditMode ? 'Save Changes' : 'Add Product'}</button>
       </form>
 
      

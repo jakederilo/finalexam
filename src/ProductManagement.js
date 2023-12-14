@@ -2,13 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 import { v4 as uuidv4 } from 'uuid';
-import Product from './Product.js';
+import Product from './Product';
+import SalesChart from './SalesChart';
+import StockChart from './StockChart';
+
+import 'bootstrap/dist/css/bootstrap.min.css';
+import { Modal, Button, Card } from 'react-bootstrap';
+import ProductCard from './ProductCard'; 
+
+
+
 
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  
-
   const [editingProduct, setEditingProduct] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [updatedCategoryName, setUpdatedCategoryName] = useState('');
@@ -16,13 +23,37 @@ const ProductManagement = () => {
   const [totalAmount, setTotalAmount] = useState(0);
   const [transactions, setTransactions] = useState([]);
   const [buyerName, setBuyerName] = useState('');
-  
   const [purchasers, setPurchasers] = useState([]);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [showModal, setShowModal] = useState(false);
+  const [modalProduct, setModalProduct] = useState({});
+  const [imageUrl, setImageUrl] = useState('');
+  const [localImageUrl, setLocalImageUrl] = useState('');
+  const [sortByQuantity, setSortByQuantity] = useState(false);
+
+  
+ 
+  const handleOpenModal = () => {
+    setModalProduct({});
+    setShowModal(true);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImageUrl(e.target.result); // Update state with image URL
+    };
+    reader.readAsDataURL(file);
+  };
+
+  
+
+  
 
 
   const addProduct = (product) => {
-    setProducts([...products, { ...product, id: uuidv4() }]);
+    setProducts([...products, { ...product, id: uuidv4(), image: imageUrl }]);
   };
 
   const handleSubmit = (e) => {
@@ -132,7 +163,6 @@ const ProductManagement = () => {
   };
 
   const completeTransaction = () => {
-    // Check if the buyer's name is not empty
     if (!buyerName.trim()) {
       alert("Please enter the buyer's name before completing the transaction.");
       return;
@@ -140,15 +170,18 @@ const ProductManagement = () => {
   
     const transactionDetails = {
       buyerName: buyerName,
-      items: cart.map(item => ({ ...item, quantity: 1 })),
+      items: cart.map((item) => ({ ...item, quantity: 1 })),
       date: new Date(),
     };
   
+    setTransactions([...transactions, transactionDetails]);
     setPurchasers([...purchasers, transactionDetails]);
     setCart([]);
     setTotalAmount(0);
     setBuyerName('');
   };
+
+  
 
   const calculateTotalQuantityForBuyer = (buyerName) => {
     const itemQuantities = {};
@@ -198,11 +231,48 @@ const ProductManagement = () => {
   };
   
 
-  // New function to sort transactions by count
-  const sortTransactionsByCount = () => {
-    const sortedTransactions = transactions.slice().sort((a, b) => b.stock - a.stock);
+  const sortTransactionsByQuantity = () => {
+    // Create a map to aggregate quantities for each product
+    const productQuantities = new Map();
+
+    // Iterate through transactions and items to aggregate quantities
+    transactions.forEach((transaction) => {
+      transaction.items.forEach((item) => {
+        const productId = item.id;
+
+        // If the product is not in the map, initialize with 0 quantity
+        if (!productQuantities.has(productId)) {
+          productQuantities.set(productId, 0);
+        }
+
+        // Increment the quantity for the product
+        productQuantities.set(productId, productQuantities.get(productId) + (item.quantity || 0));
+      });
+    });
+
+    // Sort transactions based on aggregated product quantities
+    const sortedTransactions = transactions.slice().sort((a, b) => {
+      const quantityA = a.items.reduce((acc, item) => acc + (item.quantity || 0), 0);
+      const quantityB = b.items.reduce((acc, item) => acc + (item.quantity || 0), 0);
+      return quantityB - quantityA; // Descending order
+    });
+
     setTransactions(sortedTransactions);
   };
+
+
+
+  const sortTransactionsByDateTime = () => {
+    const sortedTransactions = transactions.slice().sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      
+      return dateB - dateA;
+    });
+  
+    setTransactions(sortedTransactions);
+  };
+  
 
   const sortBuyersByTotalQuantity = () => {
     const sortedBuyers = purchasers.slice().sort((a, b) => {
@@ -224,60 +294,141 @@ const ProductManagement = () => {
     setCurrentDateTime(new Date());
   }, [transactions]); // Update when transactions change
 
+
   return (
-    <div>
-      <Tabs>
-        <TabList>
-          <Tab>Add Product</Tab>
-
-          <Tab>Transaction Report</Tab>
-          <Tab>Product List</Tab>
-          <Tab>Transaction Management</Tab>
-
+    <div className="container mt-5">
+      <Tabs style={{bg: 'danger' }}>
+        <TabList className="navbar nav-tabs ">
+          <Tab className="nav-item nav-link text-dark btn bg-danger text-white ">Product Management</Tab>
+          <Tab className="nav-item nav-link text-dark btn">Stock List</Tab>
+          <Tab className="nav-item nav-link text-dark btn">Transaction Management</Tab>
+          <Tab className="nav-item nav-link text-dark btn">Transaction Report</Tab>
         </TabList>
 
         <TabPanel>
-          <form onSubmit={handleProductSubmit} >
-            <input type="text" name="name" placeholder="Product Name" required />
-            <input type="number" name="price" placeholder="Product Price" required />
-            <input type="number" name="stock" placeholder="Product Stock" required />
-            <select name="category" required>
-              <option value="">Select a Category</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.name}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-            <button type="submit">Add Product</button>
-            
+          <button onClick={handleOpenModal} className="btn btn-primary mb-5">
+            Add Product
+          </button>
 
-          </form>
-          <form onSubmit={handleCategorySubmit}>
-            <input type="text" name="categoryName" placeholder="Category Name" required />
-            <button type="submit">Add Category</button>
+          <h2 className="mb-3">Product Management</h2>
+
+          <Modal show={showModal} onHide={() => setShowModal(false)}>
+            <Modal.Header closeButton>
+              <Modal.Title>Add Product</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <form onSubmit={handleProductSubmit}>
+                <div className="mb-3">
+                  <label htmlFor="productName" className="form-label">
+                    Product Name
+                  </label>
+                  <input
+                    type="text"
+                    id="productName"
+                    name="name"
+                    placeholder="Product Name"
+                    required
+                    className="form-control"
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="productPrice" className="form-label">
+                    Product Price
+                  </label>
+                  <input
+                    type="number"
+                    id="productPrice"
+                    name="price"
+                    placeholder="Product Price"
+                    required
+                    className="form-control"
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="productStock" className="form-label">
+                    Product Stock
+                  </label>
+                  <input
+                    type="number"
+                    id="productStock"
+                    name="stock"
+                    placeholder="Product Stock"
+                    required
+                    className="form-control"
+                  />
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="productCategory" className="form-label">
+                    Product Category
+                  </label>
+                  <select id="productCategory" name="category" required className="form-select">
+                    <option value="">Select a Category</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.name}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+              <div className="mb-3">
+              <label htmlFor="productImage" className="form-label" id="ProductImage">
+                Product Image
+              </label>
+              <input
+              type="file"
+              id="productImage"
+              name="image"
+              onChange={handleFileChange}
+              accept="image/*"
+              className="form-control"
+                />
+              </div>
+                <button type="submit" className="btn btn-primary mb-5">
+                  Add Product
+                </button>
+              </form>
+            </Modal.Body>
+            <Modal.Footer>
+              <Button variant="secondary" onClick={() => setShowModal(false)}>
+                Close
+              </Button>
+            </Modal.Footer>
+          </Modal>
+        
+
+          <form onSubmit={handleCategorySubmit} className="mb-3">
+            <div className="mb-3">
+              <label htmlFor="categoryName" className="form-label">Category Name</label>
+              <input type="text" id="categoryName" name="categoryName" placeholder="Category Name" required className="form-control" />
+            </div>
+            <button type="submit" className="btn btn-primary mb-5">Add Category</button>
           </form>
 
           <div>
             <h2>Categories</h2>
-            <ul>
+            <ul className="list-group mt-3">
               {categories.map((category) => (
-                <li key={category.id}>
+                <li key={category.id} className="list-group-item d-flex justify-content-between align-items-center">
                   {editingCategory === category.id ? (
-                    <div>
+                    <div className="d-flex align-items-center">
                       <input
                         type="text"
                         value={updatedCategoryName}
                         onChange={(e) => setUpdatedCategoryName(e.target.value)}
+                        className="form-control me-2"
                       />
-                      <button onClick={() => updateCategory(category.id)}>Save</button>
-                      <button onClick={cancelEditingCategory}>Cancel</button>
+                      <button onClick={() => updateCategory(category.id)} className="btn btn-success">Save</button>
+                      <button onClick={cancelEditingCategory} className="btn btn-warning">Cancel</button>
                     </div>
                   ) : (
-                    <div>
-                      {category.name}
-                      <button onClick={() => startEditingCategory(category.id)}>Update</button>
-                      <button onClick={() => deleteCategory(category.id)}>Delete</button>
+                    <div className='d-flex align-items-center justify-content-between w-100'>
+                      <span>{category.name}</span>
+                      <div className='mx-'>
+                        
+                        <button onClick={() => startEditingCategory(category.id)} className="btn btn-success mx-2">Update</button>
+                        <button onClick={() => deleteCategory(category.id)} className="btn btn-danger">Delete</button>
+                      </div>
                     </div>
                   )}
                 </li>
@@ -286,133 +437,129 @@ const ProductManagement = () => {
           </div>
         </TabPanel>
 
- 
-  <TabPanel>
-  <div>
-    <h2>Transaction Report</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Buyer Name</th>
-          <th>Name</th>
-          <th>Price</th>
-          <th>Quantity</th>
-          <th>Category</th>
-          
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        {purchasers.map((transaction, index) => (
-          <React.Fragment key={index}>
-            <tr>
-              <td>{transaction.buyerName}</td>
-              <td colSpan="5"></td>
-            </tr>
-            {transaction.items.map((item, subIndex) => (
-              <React.Fragment key={subIndex}>
-                <tr>
-                  <td></td>
-                  <td>{item.name}</td>
-                  <td>{item.price}</td>
-                  <td>{item.quantity}</td>
-                  <td>{item.category}</td>
-                  <td>{transaction.date.toLocaleString()}</td>
-                </tr>
-                
-              </React.Fragment>
-            ))}
-     
-            <tr>
-  <td colSpan="3"></td>
-  <td>
-    <p>total Quantity: {calculateTotalQuantityForBuyer(transaction.buyerName)}</p>
-  </td>
-  <td colSpan="2"></td>
-</tr>
-          </React.Fragment>
-        ))}
-        
-      </tbody>
-    </table>
-   
-  </div>
-</TabPanel>
-
-
         <TabPanel>
-          <div>
-            <h2>Product List</h2>
-            <table>
+      <div className="mt-3">
+        <h2>Product List</h2>
+        
+
+        <div className="d-flex flex-wrap">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onEdit={startEditingProduct}
+              onDelete={deleteProduct}
+              onAddToCart={addToCart}
+              
+            />
+          ))}
+        </div>
+
+       
+{editingProduct && (
+  <Product
+    product={products.find((product) => product.id === editingProduct)}
+    categories={categories}
+    onSubmit={(updatedProduct) => updateProduct(editingProduct, updatedProduct)}
+    image={products.find((product) => product.id === editingProduct).image}
+  />
+)}
+      </div>
+    </TabPanel>
+        <TabPanel>
+          <div className="mt-3">
+            <h2>Transaction Management</h2>
+            <form>
+              <div className="mb-3">
+                <label htmlFor="buyerName" className="form-label">Buyer's Name:</label>
+                <input
+                  type="text"
+                  id="buyerName"
+                  value={buyerName}
+                  onChange={(e) => setBuyerName(e.target.value)}
+                  className="form-control"
+                />
+              </div>
+            </form>
+            <ul className="list-group mt-3">
+              {cart.map((item, index) => (
+                <li key={index} className="list-group-item">
+                  {item.name} - Quantity: {item.quantity}
+                </li>
+              ))}
+            </ul>
+            <p>Total Quantity: {calculateTotalQuantity()}</p>
+            <p>Total Amount: ₱{totalAmount.toFixed(2)}</p>
+            <button onClick={calculateTotalAmount} className="btn btn-warning mx-2">Calculate Total</button>
+            <button onClick={completeTransaction} className="btn btn-primary">Complete Transaction</button>
+          </div>
+        </TabPanel>
+
+   
+        <TabPanel>
+          <div className="mt-3">
+            <h2>Transaction Report</h2>
+            <table className="table table-striped">
               <thead>
                 <tr>
+                  <th>Buyer Name</th>
+ 
                   <th>Name</th>
                   <th>Price</th>
-                  <th>Stock</th>
+                  <th>Quantity</th>
                   <th>Category</th>
-                  <th>Actions</th>
+                  <th>Date</th>
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
-                  <tr key={product.id}>
-                    <td>{product.name}</td>
-                    <td>{product.price}</td>
-                    <td>{product.stock}</td>
-                    <td>{product.category}</td>
-                    <td>
-                      <button onClick={() => startEditingProduct(product.id)}>Edit</button>
-                      <button onClick={() => deleteProduct(product.id)}>Delete</button>
-                      <button onClick={() => addToCart(product)}>Add to Cart</button>
-                    </td>
-                  </tr>
+                {purchasers.map((transaction, index) => (
+                  <React.Fragment key={index}>
+                    {transaction.items.reduce((acc, item, subIndex) => {
+                      const existingItem = acc.find((accItem) => accItem.id === item.id);
+
+                      if (existingItem) {
+                        existingItem.quantity += item.quantity || 0;
+                      } else {
+                        acc.push({ ...item });
+                      }
+
+                      return acc;
+                    }, []).map((aggregatedItem, subIndex) => (
+                      <tr key={subIndex}>
+                        <td>{transaction.buyerName}</td>
+                       
+                        <td>{aggregatedItem.name}</td>
+                        <td>{aggregatedItem.price}</td>
+                        <td>{aggregatedItem.quantity}</td>
+                        <td>{aggregatedItem.category}</td>
+                        <td>{transaction.date.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </React.Fragment>
                 ))}
-               
               </tbody>
-              
             </table>
-            {editingProduct && (
-        <Product
-          product={products.find((product) => product.id === editingProduct)}
-          categories={categories}
-          onSubmit={(updatedProduct) =>
-            updateProduct(editingProduct, updatedProduct)
-          }
-        />
-      )}
+            {/* Sorting button */}
+            <button onClick={sortTransactionsByQuantity} className="btn btn-primary">
+              Sort by Quantity (Least to Most)
+            </button>
+    
+
+
+    <div className="mt-3">
+            <h2>Stock Chart</h2>
+            {/* Pass the products data to the StockChart component */}
+            <StockChart products={products} />
           </div>
-        </TabPanel>
-        <TabPanel>
-  <div>
-    <h2>Transaction Management</h2>
-    <form>
-      <label htmlFor="buyerName">Buyer's Name:</label>
-      <input
-        type="text"
-        id="buyerName"
-        value={buyerName}
-        onChange={(e) => setBuyerName(e.target.value)}
-      />
-    </form>
-    <ul>
-      {cart.map((item, index) => (
-        <li key={index}>
-          {item.name} - Quantity: {item.quantity}
-        </li>
-      ))}
-    </ul>
-    <p>Total Quantity: {calculateTotalQuantity()}</p>
-    <p>Total Amount: ₱{totalAmount.toFixed(2)}</p>
-    <button onClick={calculateTotalAmount}>Calculate Total</button>
-    <button onClick={completeTransaction}>Complete Transaction</button>
+          <div className="mt-3">
+            <h2>Sales Chart</h2>
+            {/* Pass the transactions data to the SalesChart component */}
+            <SalesChart transactions={transactions} />
+            </div>
   </div>
 </TabPanel>
 
-
-        
-
       </Tabs>
-
     </div>
   );
 };
