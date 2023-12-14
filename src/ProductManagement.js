@@ -29,7 +29,7 @@ const ProductManagement = () => {
   const [modalProduct, setModalProduct] = useState({});
   const [imageUrl, setImageUrl] = useState('');
   const [localImageUrl, setLocalImageUrl] = useState('');
-  const [sortByQuantity, setSortByQuantity] = useState(false);
+  const [sortOrder, setSortOrder] = useState('asc');
 
   
  
@@ -230,37 +230,26 @@ const ProductManagement = () => {
     return totalQuantity;
   };
   
+// Sorting function based on total quantity for Transaction Report
+const sortPurchasersByQuantity = () => {
+  const sortedBuyers = purchasers.slice().sort((a, b) => {
+    const totalQuantityA = a.items.reduce((acc, item) => acc + (item.quantity || 0), 0);
+    const totalQuantityB = b.items.reduce((acc, item) => acc + (item.quantity || 0), 0);
 
-  const sortTransactionsByQuantity = () => {
-    // Create a map to aggregate quantities for each product
-    const productQuantities = new Map();
+    // Change the comparison based on the sortOrder
+    return sortOrder === 'asc' ? totalQuantityA - totalQuantityB : totalQuantityB - totalQuantityA;
+  });
 
-    // Iterate through transactions and items to aggregate quantities
-    transactions.forEach((transaction) => {
-      transaction.items.forEach((item) => {
-        const productId = item.id;
+  // Update purchasers with sorted data
+  setPurchasers(sortedBuyers);
+};
 
-        // If the product is not in the map, initialize with 0 quantity
-        if (!productQuantities.has(productId)) {
-          productQuantities.set(productId, 0);
-        }
-
-        // Increment the quantity for the product
-        productQuantities.set(productId, productQuantities.get(productId) + (item.quantity || 0));
-      });
-    });
-
-    // Sort transactions based on aggregated product quantities
-    const sortedTransactions = transactions.slice().sort((a, b) => {
-      const quantityA = a.items.reduce((acc, item) => acc + (item.quantity || 0), 0);
-      const quantityB = b.items.reduce((acc, item) => acc + (item.quantity || 0), 0);
-      return quantityB - quantityA; // Descending order
-    });
-
-    setTransactions(sortedTransactions);
-  };
-
-
+// Toggle sorting order for Transaction Report
+const toggleSortOrderForPurchasers = () => {
+  setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  sortPurchasersByQuantity(); // Call the sorting function after changing the sortOrder
+};
+  
 
   const sortTransactionsByDateTime = () => {
     const sortedTransactions = transactions.slice().sort((a, b) => {
@@ -499,11 +488,14 @@ const ProductManagement = () => {
         <TabPanel>
           <div className="mt-3">
             <h2>Transaction Report</h2>
+            {/* Add sorting button */}
+            <button onClick={toggleSortOrderForPurchasers} className="btn btn-primary">
+              Sort by Quantity ({sortOrder === 'asc' ? 'Least to Most' : 'Most to Least'})
+            </button>
             <table className="table table-striped">
               <thead>
                 <tr>
                   <th>Buyer Name</th>
- 
                   <th>Name</th>
                   <th>Price</th>
                   <th>Quantity</th>
@@ -514,35 +506,33 @@ const ProductManagement = () => {
               <tbody>
                 {purchasers.map((transaction, index) => (
                   <React.Fragment key={index}>
-                    {transaction.items.reduce((acc, item, subIndex) => {
-                      const existingItem = acc.find((accItem) => accItem.id === item.id);
+                    {transaction.items
+                      .reduce((acc, item) => {
+                        const existingItem = acc.find((accItem) => accItem.id === item.id);
 
-                      if (existingItem) {
-                        existingItem.quantity += item.quantity || 0;
-                      } else {
-                        acc.push({ ...item });
-                      }
+                        if (existingItem) {
+                          existingItem.quantity += item.quantity || 0;
+                        } else {
+                          acc.push({ ...item });
+                        }
 
-                      return acc;
-                    }, []).map((aggregatedItem, subIndex) => (
-                      <tr key={subIndex}>
-                        <td>{transaction.buyerName}</td>
-                       
-                        <td>{aggregatedItem.name}</td>
-                        <td>{aggregatedItem.price}</td>
-                        <td>{aggregatedItem.quantity}</td>
-                        <td>{aggregatedItem.category}</td>
-                        <td>{transaction.date.toLocaleString()}</td>
-                      </tr>
-                    ))}
+                        return acc;
+                      }, [])
+                      .map((aggregatedItem, subIndex) => (
+                        <tr key={subIndex}>
+                          <td>{transaction.buyerName}</td>
+                          <td>{aggregatedItem.name}</td>
+                          <td>{aggregatedItem.price}</td>
+                          <td>{aggregatedItem.quantity}</td>
+                          <td>{aggregatedItem.category}</td>
+                          <td>{transaction.date.toLocaleString()}</td>
+                        </tr>
+                      ))}
                   </React.Fragment>
                 ))}
               </tbody>
             </table>
-            {/* Sorting button */}
-            <button onClick={sortTransactionsByQuantity} className="btn btn-primary">
-              Sort by Quantity (Least to Most)
-            </button>
+          
     
 
 
