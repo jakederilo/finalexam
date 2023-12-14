@@ -5,10 +5,12 @@ import { v4 as uuidv4 } from 'uuid';
 import Product from './Product';
 import SalesChart from './SalesChart';
 import StockChart from './StockChart';
-
+import StocksEdit from './StocksEdit';
+import { Navbar, Nav } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Modal, Button, Card } from 'react-bootstrap';
-import ProductCard from './ProductCard'; 
+import ProductCard from './ProductCard';
+import JollibeLogo from './Jabelogo.png';
 
 
 
@@ -16,12 +18,14 @@ import ProductCard from './ProductCard';
 const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([
-    { name: 'Bestsellers', id: uuidv4() },
+    { name: 'Best Sellers', id: uuidv4() },
     { name: 'Family Meals', id: uuidv4() },
     { name: 'Breakfast', id: uuidv4() },
     { name: 'Burgers', id: uuidv4() },
+    { name: 'Desserts', id: uuidv4() },
    ]);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [editingStocks, setEditingStocks] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [updatedCategoryName, setUpdatedCategoryName] = useState('');
   const [cart, setCart] = useState([]);
@@ -35,6 +39,9 @@ const ProductManagement = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [localImageUrl, setLocalImageUrl] = useState('');
   const [sortOrder, setSortOrder] = useState('asc');
+  const [activeSection, setActiveSection] = useState('product-management');
+  const [updateStocksOnly, setUpdateStocksOnly] = useState(false);
+  
 
   
  
@@ -93,6 +100,7 @@ const ProductManagement = () => {
       )
     );
     setEditingProduct(null);
+    setEditingStocks(null); // Reset editingStocks state
   };
 
   const deleteProduct = (productId) => {
@@ -104,11 +112,19 @@ const ProductManagement = () => {
     setEditingProduct(id);
   };
 
+  const startEditingStocks = (id) => {
+    setEditingStocks(id);
+    setUpdateStocksOnly(true);
+  };
+
   const addCategory = (categoryName) => {
     setCategories([...categories, { name: categoryName, id: uuidv4() }]);
 
 
   };
+
+  
+  
 
   const handleProductSubmit = (e) => {
     e.preventDefault();
@@ -196,8 +212,63 @@ const ProductManagement = () => {
     setCart([]);
     setTotalAmount(0);
     setBuyerName('');
+  
+    // Print the transaction details
+    printTransactionDetails(transactionDetails);
+  
+    // Save the transaction details to a file
+    saveTransactionToFile(transactionDetails);
   };
-
+  
+  const printTransactionDetails = (transactionDetails) => {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write('<html><head><p style="text-align: center;"><title>Receipt</title></p>');
+    printWindow.document.write('<style>table { width: 80%; margin: 0 auto; border-collapse: collapse; }');
+    printWindow.document.write('th, td { border: 1px solid black; padding: 8px; text-align: left; }</style></head><body>');
+  
+    const formattedDate = new Date().toLocaleDateString();
+    const formattedTime = new Date().toLocaleTimeString();
+  
+    printWindow.document.write('<h1 style="text-align: center;">Jollibee Receipt</h1>');
+    printWindow.document.write(`<p style="text-align: center;">Date: ${formattedDate} | Time: ${formattedTime}</p>`);
+    printWindow.document.write(`<p style="text-align: left;">Name: ${transactionDetails.buyerName}</p>`);
+    printWindow.document.write('<table>');
+    printWindow.document.write('<tr><th>Item</th><th>Quantity</th><th>Price</th></tr>');
+  
+    transactionDetails.items.forEach((item) => {
+      printWindow.document.write(`<tr><td>${item.name}</td><td>${item.quantity}</td><td>₱${item.price}</td></tr>`);
+    });
+  
+    printWindow.document.write('</table>');
+    printWindow.document.write(`<p style="text-align: center;">Total Amount: ₱${totalAmount.toFixed(2)}</p>`);
+    printWindow.document.write('<p style="text-align: center;">Thank you for choosing at Jollibee!</p>');
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.print();
+  };
+  
+  
+  
+  const saveTransactionToFile = (transactionDetails) => {
+    const textData = `Buyer Name: ${transactionDetails.buyerName}\n\n`;
+    const itemsData = transactionDetails.items
+      .map((item) => `${item.name} - ${item.quantity}`)
+      .join('\n');
+  
+    const fileData = `${textData}${itemsData}`;
+  
+    const blob = new Blob([fileData], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+  
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'transaction_details.txt';
+    a.click();
+  
+    // Clean up
+    URL.revokeObjectURL(url);
+  };
+  
   
 
   const calculateTotalQuantityForBuyer = (buyerName) => {
@@ -290,6 +361,10 @@ const toggleSortOrderForPurchasers = () => {
     setPurchasers(sortedBuyers);
   };
 
+  const handleEditStocks = (productId) => {
+    setEditingStocks(productId);
+    setUpdateStocksOnly(true);
+  };
 
 
   
@@ -299,171 +374,238 @@ const toggleSortOrderForPurchasers = () => {
     // Update the current date and time
     setCurrentDateTime(new Date());
   }, [transactions]); // Update when transactions change
+  const handleSectionChange = (section) => {
+    setActiveSection(section);
+  };
+
+return (
+    <div>
+      {/* Navbar */}
+      <Navbar bg="danger" variant="dark" expand="lg" className='fixed-top'>
+      <Navbar.Brand href="#home" className='mx-5 col-6 mb-2 navbar-brand-with-font d-flex align-items-center'>
+  <div>
+  
+  <img src={JollibeLogo} alt="Jollibe Logo" width="140" height="60" />
+ 
 
 
-  return (
-    <div className="container mt-5">
-      <Tabs style={{bg: 'danger' }}>
-        <TabList className="navbar nav-tabs ">
-          <Tab className="nav-item nav-link text-dark btn bg-danger text-white ">Product Management</Tab>
-          <Tab className="nav-item nav-link text-dark btn">Stock List</Tab>
-          <Tab className="nav-item nav-link text-dark btn">Transaction Management</Tab>
-          <Tab className="nav-item nav-link text-dark btn">Transaction Report</Tab>
-        </TabList>
 
-        <TabPanel>
-          <button onClick={handleOpenModal} className="btn btn-primary mb-5">
-            Add Product
-          </button>
+  </div>
+</Navbar.Brand>
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Collapse id="basic-navbar-nav">
+          <Nav className="mr-auto">
+            <Nav.Link onClick={() => handleSectionChange('product-management')}>Product Management</Nav.Link>
+            <Nav.Link onClick={() => handleSectionChange('stock-list')}>Stock List</Nav.Link>
+            <Nav.Link onClick={() => handleSectionChange('transaction-management')}>Transaction Management</Nav.Link>
+            <Nav.Link onClick={() => handleSectionChange('transaction-report')}>Transaction Report</Nav.Link>
+            <Nav.Link onClick={() => handleSectionChange('report-charts')}>Report Charts</Nav.Link>
+          </Nav>
+        </Navbar.Collapse>
+      </Navbar>
 
-          <h2 className="mb-3">Product Management</h2>
-
-          <Modal show={showModal} onHide={() => setShowModal(false)}>
-            <Modal.Header closeButton>
-              <Modal.Title>Add Product</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <form onSubmit={handleProductSubmit}>
-                <div className="mb-3">
-                  <label htmlFor="productName" className="form-label">
-                    Product Name
-                  </label>
-                  <input
-                    type="text"
-                    id="productName"
-                    name="name"
-                    placeholder="Product Name"
-                    required
-                    className="form-control"
-                  />
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="productPrice" className="form-label">
-                    Product Price
-                  </label>
-                  <input
-                    type="number"
-                    id="productPrice"
-                    name="price"
-                    placeholder="Product Price"
-                    required
-                    className="form-control"
-                  />
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="productStock" className="form-label">
-                    Product Stock
-                  </label>
-                  <input
-                    type="number"
-                    id="productStock"
-                    name="stock"
-                    placeholder="Product Stock"
-                    required
-                    className="form-control"
-                  />
-                </div>
-                <div className="mb-3">
-                  <label htmlFor="productCategory" className="form-label">
-                    Product Category
-                  </label>
-                  <select id="productCategory" name="category" required className="form-select">
-                    <option value="">Select a Category</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.name}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-              <div className="mb-3">
-              <label htmlFor="productImage" className="form-label" id="ProductImage">
-                Product Image
-              </label>
-              <input
-              type="file"
-              id="productImage"
-              name="image"
-              onChange={handleFileChange}
-              accept="image/*"
-              className="form-control"
-                />
-              </div>
-                <button type="submit" className="btn btn-primary mb-5">
-                  Add Product
-                </button>
-              
-              </form>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowModal(false)}>
-                Close
-              </Button>
-            </Modal.Footer>
-          </Modal>
-        
-
-          <form onSubmit={handleCategorySubmit} className="mb-3">
-            <div className="mb-3">
-              <label htmlFor="categoryName" className="form-label">Category Name</label>
-              <input type="text" id="categoryName" name="categoryName" placeholder="Category Name" required className="form-control" />
-            </div>
-            <button type="submit" className="btn btn-primary mb-5">Add Category</button>
-          </form>
-
-     
+      <div className="container mt-5">
+        {/* Content based on activeSection */}
+        {activeSection === 'product-management' && (
           <div>
-  <h2>Categories</h2>
-  <ul className="list-group mt-3">
-    {categories.map((category) => (
-      <li key={category.id} className="list-group-item d-flex justify-content-between align-items-center">
-        {editingCategory === category.id ? (
-          <div className="d-flex align-items-center">
-            <input
-              type="text"
-              value={updatedCategoryName}
-              onChange={(e) => setUpdatedCategoryName(e.target.value)}
-              className="form-control me-2"
-            />
-            <button onClick={() => updateCategory(category.id)} className="btn btn-success">Save</button>
-            <button onClick={cancelEditingCategory} className="btn btn-warning">Cancel</button>
+            <br></br>
+            <br></br>
+            <br></br>
+            {/* Your existing content for 'product-management' */}
+            <h2 className="mb-3">Product Management</h2>
+
+            <button onClick={handleOpenModal} className="btn btn-primary mb-5">
+              Add Product
+            </button>
+            <Modal show={showModal} onHide={() => setShowModal(false)}>
+              <Modal.Header closeButton>
+                <Modal.Title>Add Product</Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                <form onSubmit={handleProductSubmit}>
+                  <div className="mb-3">
+                    <label htmlFor="productName" className="form-label">
+                      Product Name
+                    </label>
+                    <input
+                      type="text"
+                      id="productName"
+                      name="name"
+                      placeholder="Product Name"
+                      required
+                      className="form-control"
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="productPrice" className="form-label">
+                      Product Price
+                    </label>
+                    <input
+                      type="number"
+                      id="productPrice"
+                      name="price"
+                      placeholder="Product Price"
+                      required
+                      className="form-control"
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="productStock" className="form-label">
+                      Product Stock
+                    </label>
+                    <input
+                      type="number"
+                      id="productStock"
+                      name="stock"
+                      placeholder="Product Stock"
+                      required
+                      className="form-control"
+                    />
+                  </div>
+                  <div className="mb-3">
+                    <label htmlFor="productCategory" className="form-label">
+                      Product Category
+                    </label>
+                    <select id="productCategory" name="category" required className="form-select">
+                      <option value="">Select a Category</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.name}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                <div className="mb-3">
+                <label htmlFor="productImage" className="form-label" id="ProductImage">
+                  Product Image
+                </label>
+                <input
+                type="file"
+                id="productImage"
+                name="image"
+                onChange={handleFileChange}
+                accept="image/*"
+                className="form-control"
+                  />
+                </div>
+                  <button type="submit" className="btn btn-primary mb-5">
+                    Add Product
+                  </button>
+                
+                </form>
+              </Modal.Body>
+              <Modal.Footer>
+                <Button variant="secondary" onClick={() => setShowModal(false)}>
+                  Close
+                </Button>
+              </Modal.Footer>
+            </Modal>
+
+
+            <h4 className="mb-4 mt-5">Products</h4>
+            
+            {/* Add the table for displaying products */}
+            <table className="table table-striped">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Category</th>
+                <th>Actions</th> {/* Added column for actions */}
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product.id}>
+                  <td>{product.name}</td>
+                  <td>{product.price}</td>
+                  <td>{product.stock}</td>
+                  <td>{product.category}</td>
+                  <td>
+                   
+                    
+                    <button onClick={() => handleEditStocks(product.id)} className="btn btn-info me-2">
+                      Update Stocks
+                    </button>
+                    <button onClick={() => deleteProduct(product.id)} className="btn btn-danger">
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          {editingStocks && (
+  <StocksEdit
+    product={products.find((product) => product.id === editingStocks)}
+    onSubmit={(updatedProduct) => updateProduct(editingStocks, updatedProduct)}
+  />
+)}
+
+          <div>
+           
+            <div>
+              <h2 className='mb-4 mt-5'>Categories</h2>
+              <form onSubmit={handleCategorySubmit} className="mb-3">
+              <div className="mb-3">
+                <label htmlFor="categoryName" className="form-label mb-2">Category Name:</label>
+                <input type="text" id="categoryName" name="categoryName" placeholder="Category Name" required className="form-control" />
+              </div>
+              <button type="submit" className="btn btn-primary mb-4">Add Category</button>
+            </form>
+              <ul className="list-group mt-3">
+                {categories.map((category) => (
+                  <li key={category.id} className="list-group-item d-flex justify-content-between align-items-center">
+                    {editingCategory === category.id ? (
+                      <div className="d-flex align-items-center">
+                        <input
+                          type="text"
+                          value={updatedCategoryName}
+                          onChange={(e) => setUpdatedCategoryName(e.target.value)}
+                          className="form-control me-2"
+                        />
+                        <button onClick={() => updateCategory(category.id)} className="btn btn-success">Save</button>
+                        <button onClick={cancelEditingCategory} className="btn btn-warning">Cancel</button>
+                      </div>
+                    ) : (
+                      <div className='d-flex align-items-center justify-content-between w-100'>
+                        <span>{category.name}</span>
+                        <div className='mx-'>
+                          <button onClick={() => startEditingCategory(category.id)} className="btn btn-success mx-2">Update</button>
+                          <button onClick={() => deleteCategory(category.id)} className="btn btn-danger">Delete</button>
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        ) : (
-          <div className='d-flex align-items-center justify-content-between w-100'>
-            <span>{category.name}</span>
-            <div className='mx-'>
-              <button onClick={() => startEditingCategory(category.id)} className="btn btn-success mx-2">Update</button>
-              <button onClick={() => deleteCategory(category.id)} className="btn btn-danger">Delete</button>
+          </div>
+        )}
+        {activeSection === 'stock-list' && (
+          <div>
+            <br></br>
+            <br></br>
+            <br></br>
+            <h2>Stock List</h2>
+            <div className="d-flex flex-wrap">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onEdit={startEditingProduct}
+                  onDelete={deleteProduct}
+                  onAddToCart={addToCart}
+                />
+              ))}
             </div>
           </div>
         )}
-      </li>
-    ))}
-  </ul>
-</div>
-        </TabPanel>
-
-        <TabPanel>
-      <div className="mt-3">
-        <h2>Product List</h2>
-        
-
-        <div className="d-flex flex-wrap">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onEdit={startEditingProduct}
-              onDelete={deleteProduct}
-              onAddToCart={addToCart}
-              
-            />
-          ))}
-        </div>
-
-       
-{editingProduct && (
+        {editingProduct && (
   <Product
     product={products.find((product) => product.id === editingProduct)}
     categories={categories}
@@ -471,10 +613,13 @@ const toggleSortOrderForPurchasers = () => {
     image={products.find((product) => product.id === editingProduct).image}
   />
 )}
-      </div>
-    </TabPanel>
-        <TabPanel>
-          <div className="mt-3">
+        
+        {activeSection === 'transaction-management' && (
+          <div>
+            <br></br>
+            <br></br>
+            <br></br>
+            {/* Your existing content for 'transaction-management' */}
             <h2>Transaction Management</h2>
             <form>
               <div className="mb-3">
@@ -498,17 +643,19 @@ const toggleSortOrderForPurchasers = () => {
             <p>Total Purchase: {calculateTotalQuantity()}</p>
             <p>Total Amount: ₱{totalAmount.toFixed(2)}</p>
             <button onClick={calculateTotalAmount} className="btn btn-warning mx-2">Calculate Total</button>
-            <button onClick={completeTransaction} className="btn btn-primary">Complete Transaction</button>
-          </div>
-        </TabPanel>
+            <button onClick={completeTransaction} className="btn btn-primary"> Complete Transaction </button>
 
-   
-        <TabPanel>
-          <div className="mt-3">
+          </div>
+        )}
+        {activeSection === 'transaction-report' && (
+          <div>
+            <br></br>
+            <br></br>
+            <br></br>
+            {/* Your existing content for 'transaction-report' */}
             <h2>Transaction Report</h2>
-            {/* Add sorting button */}
             <button onClick={toggleSortOrderForPurchasers} className="btn btn-primary">
-              Sort by Quantity ({sortOrder === 'asc' ? 'Least to Most' : 'Most to Least'})
+              Sort by Quantity ({sortOrder === 'asc' ? 'Most to Least' : 'Least to Most'})
             </button>
             <table className="table table-striped">
               <thead>
@@ -562,24 +709,31 @@ const toggleSortOrderForPurchasers = () => {
         
     
     
-  <div className="chart-container">
-    <h2>Stock Chart</h2>
-    {/* Pass the products data to the StockChart component */}
-    <StockChart products={products} />
-  </div>
 
-  <div className="chart-container">
-    <h2>Sales Chart</h2>
-    {/* Pass the transactions data to the SalesChart component */}
-    <SalesChart transactions={transactions} />
-  </div>
+          </div>
+        )}
+        {activeSection === 'report-charts' && (
+          <div>
+          <br></br>
+          <br></br>
+          <br></br>
+          {/* Your existing content for 'transaction-report' */}
 
-  </div>
+          <div className="chart-container" style={{ width: '60%', margin: '0 auto' }}>
+            <h2>Stock Chart</h2>
+            {/* Pass the products data to the StockChart component */}
+            <StockChart products={products} />
+          </div>
 
+          <div className="chart-container" style={{ width: '60%', margin: '0 auto' }}>
+            <h2>Sales Chart</h2>
+            {/* Pass the transactions data to the SalesChart component */}
+            <SalesChart transactions={transactions} />
+          </div>
+        </div>
 
-</TabPanel>
-
-      </Tabs>
+        )}
+      </div>
     </div>
   );
 };
