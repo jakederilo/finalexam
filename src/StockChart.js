@@ -1,5 +1,7 @@
+// StockChart component
 import React, { useEffect, useRef } from 'react';
 import Chart from 'chart.js/auto';
+
 
 const StockChart = ({ products }) => {
   const chartRef = useRef(null);
@@ -13,15 +15,15 @@ const StockChart = ({ products }) => {
     // Render the new chart
     const ctx = document.getElementById('stock-chart');
     chartRef.current = new Chart(ctx, {
-      type: 'line', // Change the chart type to 'line'
+      type: 'line',
       data: {
         labels: products.map((product) => product.name),
         datasets: [
           {
             label: 'Stock',
             data: products.map((product) => product.stock),
-            backgroundColor: 'rgba(75,192,192,0.4)', // Change the color as needed
-            borderColor: 'rgba(75,192,192,1)', // Change the color as needed
+            backgroundColor: 'rgba(75,192,192,0.4)',
+            borderColor: 'rgba(75,192,192,1)',
             borderWidth: 1,
           },
         ],
@@ -36,7 +38,14 @@ const StockChart = ({ products }) => {
     });
   }, [products]);
 
-  return <canvas id="stock-chart" />;
+  
+
+  return (
+    <div className="chart-container">
+      
+      <canvas id="stock-chart" />
+    </div>
+  );
 };
 
 export default StockChart;

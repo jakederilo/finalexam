@@ -1,5 +1,7 @@
+// SalesChart component
 import React from 'react';
 import { Bar } from 'react-chartjs-2';
+
 
 const SalesChart = ({ transactions }) => {
   // Calculate sales data
@@ -24,8 +26,8 @@ const SalesChart = ({ transactions }) => {
       {
         label: 'Sales',
         data: Object.values(salesData),
-        backgroundColor: 'rgba(245, 85, 74, 0.7)', // Adjust the color and transparency
-        borderColor: 'rgba(245, 85, 74, 1)', // Adjust the color
+        backgroundColor: 'rgba(245, 85, 74, 0.7)',
+        borderColor: 'rgba(245, 85, 74, 1)',
         borderWidth: 1,
       },
     ],
@@ -44,7 +46,11 @@ const SalesChart = ({ transactions }) => {
     },
   };
 
-  return <Bar data={chartData} options={options} />;
+  return (
+    <div className="chart-container">
+      <Bar data={chartData} options={options} />
+    </div>
+  );
 };
 
 export default SalesChart;

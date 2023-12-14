@@ -46,10 +46,22 @@ const ProductManagement = () => {
     };
     reader.readAsDataURL(file);
   };
+   
 
-  
+  //design
+  const chartContainerStyle = {
+    maxHeight: '300px',
+    maxWidth: '500px',
+    marginRight: '20px',
+    flex: 1,
+  };
 
-  
+  const mt3Style = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  };
+
 
 
   const addProduct = (product) => {
@@ -473,11 +485,11 @@ const toggleSortOrderForPurchasers = () => {
             <ul className="list-group mt-3">
               {cart.map((item, index) => (
                 <li key={index} className="list-group-item">
-                  {item.name} - Quantity: {item.quantity}
+                  {item.name} - : {item.quantity}
                 </li>
               ))}
             </ul>
-            <p>Total Quantity: {calculateTotalQuantity()}</p>
+            <p>Total Purchase: {calculateTotalQuantity()}</p>
             <p>Total Amount: ₱{totalAmount.toFixed(2)}</p>
             <button onClick={calculateTotalAmount} className="btn btn-warning mx-2">Calculate Total</button>
             <button onClick={completeTransaction} className="btn btn-primary">Complete Transaction</button>
@@ -505,7 +517,15 @@ const toggleSortOrderForPurchasers = () => {
               </thead>
               <tbody>
                 {purchasers.map((transaction, index) => (
+                  // Render a row for each buyer
                   <React.Fragment key={index}>
+                    {/* Display buyer name in a separate row */}
+                    <tr>
+                      <td colSpan="6">
+                        <strong>{transaction.buyerName}</strong>
+                      </td>
+                    </tr>
+                    {/* Sort the aggregated items by quantity */}
                     {transaction.items
                       .reduce((acc, item) => {
                         const existingItem = acc.find((accItem) => accItem.id === item.id);
@@ -518,9 +538,10 @@ const toggleSortOrderForPurchasers = () => {
 
                         return acc;
                       }, [])
+                      .sort((a, b) => (sortOrder === 'asc' ? a.quantity - b.quantity : b.quantity - a.quantity))
                       .map((aggregatedItem, subIndex) => (
                         <tr key={subIndex}>
-                          <td>{transaction.buyerName}</td>
+                          <td></td> {/* Leave the buyer name column empty for aggregated items */}
                           <td>{aggregatedItem.name}</td>
                           <td>{aggregatedItem.price}</td>
                           <td>{aggregatedItem.quantity}</td>
@@ -532,21 +553,24 @@ const toggleSortOrderForPurchasers = () => {
                 ))}
               </tbody>
             </table>
-          
+        
     
-
-
-    <div className="mt-3">
-            <h2>Stock Chart</h2>
-            {/* Pass the products data to the StockChart component */}
-            <StockChart products={products} />
-          </div>
-          <div className="mt-3">
-            <h2>Sales Chart</h2>
-            {/* Pass the transactions data to the SalesChart component */}
-            <SalesChart transactions={transactions} />
-            </div>
+    
+  <div className="chart-container">
+    <h2>Stock Chart</h2>
+    {/* Pass the products data to the StockChart component */}
+    <StockChart products={products} />
   </div>
+
+  <div className="chart-container">
+    <h2>Sales Chart</h2>
+    {/* Pass the transactions data to the SalesChart component */}
+    <SalesChart transactions={transactions} />
+  </div>
+
+  </div>
+
+
 </TabPanel>
 
       </Tabs>
