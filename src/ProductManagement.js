@@ -72,7 +72,10 @@ const ProductManagement = () => {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    margin: '0 10px',
   };
+
+  
 
 
 
